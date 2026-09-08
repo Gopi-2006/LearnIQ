@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/learning_models.dart';
+import '../models/story_curriculum_models.dart';
 import '../data/python_curriculum_data.dart';
 import '../repositories/learning_repository.dart';
 import '../utils/app_logger.dart';
@@ -64,22 +66,40 @@ class LearningStateManager extends ChangeNotifier {
 
       if (_isOnboardingComplete) {
         final savedName = prefs.getString('user_name') ?? 'Alex';
-        final savedXp = prefs.getInt('user_xp') ?? 50;
-        final savedStreak = prefs.getInt('user_streak') ?? 1;
+        final savedXp = prefs.getInt('user_xp') ?? 0;
+        final savedStreak = prefs.getInt('user_streak') ?? 0;
         final savedLevel = prefs.getInt('user_level') ?? 1;
+        final savedDailyProgress = prefs.getInt('user_daily_progress') ?? 0;
+        final savedCompletedLessons = prefs.getStringList('user_completed_lessons') ?? <String>[];
+        final savedActiveMisconceptions = prefs.getStringList('user_active_misconceptions') ?? <String>[];
+        final savedResolvedMisconceptions = prefs.getStringList('user_resolved_misconceptions') ?? <String>[];
 
-        if (savedXp > 500) {
-          _student = StudentState.demoReturningUser();
-          _setupReturningCourseNodes();
-        } else {
-          _student = StudentState.newLearner(name: savedName).copyWith(
-            xp: savedXp,
-            streak: savedStreak,
-            level: savedLevel,
-            dailyProgressMinutes: 4,
-          );
-          _setupNewLearnerCourseNodes();
+        Map<String, ConceptMastery> restoredConcepts = {};
+        final savedConceptsRaw = prefs.getString('user_concepts_json');
+        if (savedConceptsRaw != null && savedConceptsRaw.isNotEmpty) {
+          try {
+            final Map<String, dynamic> decoded = jsonDecode(savedConceptsRaw);
+            decoded.forEach((key, val) {
+              if (val is Map<String, dynamic>) {
+                restoredConcepts[key] = ConceptMastery.fromJson(val);
+              }
+            });
+          } catch (e) {
+            AppLogger.auth('Error decoding concepts json: $e');
+          }
         }
+
+        _student = StudentState.newLearner(name: savedName).copyWith(
+          xp: savedXp,
+          streak: savedStreak,
+          level: savedLevel,
+          dailyProgressMinutes: savedDailyProgress,
+          completedLessonIds: savedCompletedLessons,
+          concepts: restoredConcepts,
+          activeMisconceptions: savedActiveMisconceptions,
+          resolvedMisconceptions: savedResolvedMisconceptions,
+        );
+        _setupCourseNodesFromCurriculum();
       } else {
         _student = StudentState.newLearner();
         _setupNewLearnerCourseNodes();
@@ -239,12 +259,12 @@ class LearningStateManager extends ChangeNotifier {
 
       if (isCompleted) {
         status = NodeStatus.completed;
-        mastery = 0.90;
+        mastery = 1.0;
         stars = 3;
       } else if (!hasCurrentNode) {
         status = NodeStatus.current;
-        mastery = (unit.unitNumber == 7 && _student.level >= 3) ? 0.58 : 0.0;
-        stars = (unit.unitNumber == 7 && _student.level >= 3) ? 1 : 0;
+        mastery = 0.0;
+        stars = 0;
         hasCurrentNode = true;
       } else {
         status = NodeStatus.locked;
@@ -277,53 +297,81 @@ class LearningStateManager extends ChangeNotifier {
     _setupCourseNodesFromCurriculum();
   }
 
-  /// Calculates Next Best Learning Action locally with 0ms wait
+  /// Returns the first unfinished curriculum lesson, or the first if none completed
+  StoryConcept get currentLesson {
+    for (final unit in PythonCurriculumData.allUnits) {
+      if (!_student.completedLessonIds.contains(unit.id)) {
+        return unit;
+      }
+    }
+    return PythonCurriculumData.allUnits.first;
+  }
+
+  /// 1-based index of current lesson
+  int get currentLessonIndex {
+    final idx = PythonCurriculumData.allUnits.indexWhere(
+      (u) => !_student.completedLessonIds.contains(u.id),
+    );
+    return idx >= 0 ? idx + 1 : PythonCurriculumData.allUnits.length;
+  }
+
+  /// Total lessons in curriculum
+  int get totalLessonsCount => PythonCurriculumData.allUnits.length;
+
+  /// Real progress percentage based on actual completed lessons
+  double get courseProgressPercent {
+    if (PythonCurriculumData.allUnits.isEmpty) return 0.0;
+    return _student.completedLessonIds.length / PythonCurriculumData.allUnits.length;
+  }
+
+  /// Calculates Next Best Learning Action locally with 0ms wait based strictly on real evidence
   Map<String, dynamic> _computeLocalRecommendation() {
-    if (_student.xp == 0) {
+    if (_student.isNewLearner) {
       return {
         'recommended_action': 'start_lesson',
         'concept': 'variables',
-        'title': 'Variables: Labeled Storage',
-        'reason': "You're at the beginning of your journey! Master variables to unlock logic and functions.",
+        'title': 'Python Foundations: Lesson 1',
+        'reason': "Welcome to LearnIQ! Complete your first lesson so the AI can understand how you learn.",
         'estimated_time_minutes': 3,
-        'priority_score': 0.95,
+        'priority_score': 1.0,
         'urgency_tag': '🟢 NEXT STEP',
       };
     }
 
-    final hasPrintReturnMisconception = _student.activeMisconceptions
-        .any((m) => m.toLowerCase().contains('print with return') || m.toLowerCase().contains('print vs return'));
-
-    if (hasPrintReturnMisconception || (_student.concepts['functions']?.mastery ?? 1.0) < 0.65) {
+    if (_student.activeMisconceptions.isNotEmpty) {
+      final misc = _student.activeMisconceptions.first;
       return {
         'recommended_action': 'targeted_review',
-        'concept': 'functions',
-        'title': 'Fix: Print vs Return Values',
-        'reason': 'You understand function parameters, but your recent code shows confusion between displaying a value and returning one.',
+        'concept': currentLesson.id,
+        'title': 'Targeted Fix: $misc',
+        'reason': 'Your recent interactive practice flagged: $misc. A 3-min repair drill will clear it up.',
         'estimated_time_minutes': 3,
         'priority_score': 0.94,
         'urgency_tag': '🔴 CRITICAL',
       };
     }
 
-    final loopsRetention = _student.concepts['loops']?.retention ?? 1.0;
-    if (loopsRetention < 0.50) {
+    if (_student.weakTopics.isNotEmpty) {
+      final weak = _student.weakTopics.first;
+      final topicName = weak.key;
+      final retPct = (weak.value.retention * 100).toInt();
       return {
         'recommended_action': 'spaced_review',
-        'concept': 'loops',
-        'title': 'Review: Loops & Ranges',
-        'reason': 'Spaced retention model shows Loops decaying (43%). Quick 3-min practice will protect your concept stability.',
+        'concept': topicName,
+        'title': 'Review: ${topicName.toUpperCase()}',
+        'reason': 'Cognitive radar detected low retention ($retPct%) for $topicName. Quick practice will reinforce it.',
         'estimated_time_minutes': 3,
         'priority_score': 0.88,
         'urgency_tag': '🟡 REVIEW',
       };
     }
 
+    final nextLesson = currentLesson;
     return {
       'recommended_action': 'continue_lesson',
-      'concept': 'functions',
-      'title': 'Next Skill: Modular Functions',
-      'reason': 'Keep expanding your coding toolbox with reusable function blocks.',
+      'concept': nextLesson.id,
+      'title': '${nextLesson.unitTitle}: ${nextLesson.title}',
+      'reason': 'Continue your sequential learning journey in Python.',
       'estimated_time_minutes': 4,
       'priority_score': 0.80,
       'urgency_tag': '🟢 CONTINUE',
@@ -431,8 +479,9 @@ class LearningStateManager extends ChangeNotifier {
   }
 
   void _silentRefreshRecommendation() {
+    if (_student.isNewLearner) return;
     ApiService.getRecommendationAsync().then((backendRec) {
-      if (backendRec != null) {
+      if (backendRec != null && !_student.isNewLearner) {
         _recommendation = backendRec;
         notifyListeners();
       }
@@ -711,11 +760,44 @@ class LearningStateManager extends ChangeNotifier {
   Future<void> _persistLocalState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', _student.name);
       await prefs.setInt('user_xp', _student.xp);
       await prefs.setInt('user_streak', _student.streak);
       await prefs.setInt('user_level', _student.level);
+      await prefs.setInt('user_daily_progress', _student.dailyProgressMinutes);
+      await prefs.setStringList('user_completed_lessons', _student.completedLessonIds);
+      await prefs.setStringList('user_active_misconceptions', _student.activeMisconceptions);
+      await prefs.setStringList('user_resolved_misconceptions', _student.resolvedMisconceptions);
+
+      final conceptsMap = _student.concepts.map((k, v) => MapEntry(k, v.toJson()));
+      await prefs.setString('user_concepts_json', jsonEncode(conceptsMap));
     } catch (e) {
       AppLogger.sync('Failed to write local SharedPreferences: $e');
     }
+  }
+
+  /// Safe reset of corrupted or demo learning state to brand-new baseline
+  Future<void> resetLearningState() async {
+    AppLogger.auth('Explicitly resetting all learning state to zero');
+    _student = StudentState.newLearner();
+    _setupNewLearnerCourseNodes();
+    _recommendation = _computeLocalRecommendation();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_xp');
+      await prefs.remove('user_streak');
+      await prefs.remove('user_level');
+      await prefs.remove('user_daily_progress');
+      await prefs.remove('user_completed_lessons');
+      await prefs.remove('user_concepts_json');
+      await prefs.remove('user_active_misconceptions');
+      await prefs.remove('user_resolved_misconceptions');
+      await prefs.remove('offline_event_queue');
+    } catch (e) {
+      AppLogger.auth('Error resetting state: $e');
+    }
+
+    notifyListeners();
   }
 }

@@ -3,9 +3,12 @@ import '../../core/models/learning_models.dart';
 import '../../core/services/learning_state_manager.dart';
 import '../../core/theme/app_theme.dart';
 import '../lesson/first_lesson_screen.dart';
-import '../lesson/lesson_runner_screen.dart';
 import '../iqoo_features/code_scanner_dialog.dart';
 import '../iqoo_features/teach_back_sheet.dart';
+import '../lesson/engine/ask_learn_iq_sheet.dart';
+import '../lesson/engine/lesson_engine_screen.dart';
+import '../practice/weak_areas_screen.dart';
+import '../../screens/ask_learniq_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final LearningStateManager stateManager;
@@ -21,7 +24,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final student = stateManager.student;
     final rec = stateManager.recommendation;
-    final bool isNewLearner = student.xp == 0;
+    final bool isNewLearner = student.isNewLearner;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -274,14 +277,14 @@ class HomeScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 children: [
                   TextSpan(
-                    text: 'iQOO MONSTER AI ENGINE  ',
+                    text: 'LEARNIQ AI ENGINE  ',
                     style: TextStyle(
                       color: AppColors.iqooCyan,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.8,
                     ),
                   ),
-                  TextSpan(text: 'Hybrid On-Device NPU • 8ms latency'),
+                  TextSpan(text: 'Adaptive On-Device Learning • 100% Offline'),
                 ],
               ),
             ),
@@ -380,6 +383,12 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildContinueLearningCard(BuildContext context) {
+    final lesson = stateManager.currentLesson;
+    final lessonIdx = stateManager.currentLessonIndex;
+    final totalLessons = stateManager.totalLessonsCount;
+    final progress = stateManager.courseProgressPercent;
+    final int pct = (progress * 100).toInt();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -393,36 +402,41 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(lesson.themeEmoji.isNotEmpty ? lesson.themeEmoji : '🐍', style: const TextStyle(fontSize: 18)),
                     ),
-                    child: const Text('🐍', style: TextStyle(fontSize: 18)),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'CONTINUE LEARNING',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
-                          color: AppColors.textSecondary,
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CONTINUE LEARNING',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            lesson.title,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Python Functions',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -430,9 +444,9 @@ class HomeScreen extends StatelessWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Lesson 4 of 7',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                child: Text(
+                  'Lesson $lessonIdx of $totalLessons',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 ),
               ),
             ],
@@ -441,27 +455,30 @@ class HomeScreen extends StatelessWidget {
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: const LinearProgressIndicator(
-              value: 0.68,
+            child: LinearProgressIndicator(
+              value: progress,
               minHeight: 8,
               backgroundColor: AppColors.surface,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.duolingoGreen),
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.duolingoGreen),
             ),
           ),
           const SizedBox(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                '68% Completed',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              Text(
+                '$pct% Completed',
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (ctx) => LessonRunnerScreen(stateManager: stateManager),
+                      builder: (ctx) => LessonEngineScreen(
+                        concept: lesson,
+                        stateManager: stateManager,
+                      ),
                     ),
                   );
                 },
@@ -482,14 +499,24 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildNextBestActionCard(BuildContext context, Map<String, dynamic>? rec, bool isNewLearner) {
-    final title = isNewLearner ? 'Variables: Labeled Storage' : (rec?['title'] ?? 'Fix: Print vs Return Values');
-    final reason = isNewLearner
-        ? "You're at the beginning of your journey! Master variables to unlock logic and functions."
-        : (rec?['reason'] ??
-            "You understand function parameters, but your recent explanation shows confusion between displaying a value and returning one.");
-    final estTime = isNewLearner ? 3 : (rec?['estimated_time_minutes'] ?? 3);
-    final urgency = isNewLearner ? '🟢 NEXT STEP' : (rec?['urgency_tag'] ?? '🔴 CRITICAL');
-    final cardColor = isNewLearner ? AppColors.duolingoGreen : AppColors.misconceptionRed;
+    final String title = isNewLearner
+        ? 'Python Foundations: Lesson 1'
+        : (rec?['title'] ?? stateManager.currentLesson.title);
+    final String reason = isNewLearner
+        ? "Welcome to LearnIQ! Complete your first lesson so LearnIQ can understand how you learn."
+        : (rec?['reason'] ?? "Continue your sequential progress through Python.");
+    final int estTime = isNewLearner ? 3 : (rec?['estimated_time_minutes'] ?? 3);
+    final String urgency = isNewLearner ? '🟢 NEXT STEP' : (rec?['urgency_tag'] ?? '🟢 CONTINUE');
+    final Color cardColor = isNewLearner
+        ? AppColors.duolingoGreen
+        : ((rec?['urgency_tag']?.toString().contains('CRITICAL') ?? false)
+            ? AppColors.misconceptionRed
+            : AppColors.iqooCyan);
+
+    final bool isTargetedFix = !isNewLearner && rec?['recommended_action'] == 'targeted_review';
+    final String buttonLabel = isNewLearner
+        ? 'START LESSON'
+        : (isTargetedFix ? 'START 3-MIN FIX' : 'CONTINUE LESSON');
 
     return Container(
       decoration: BoxDecoration(
@@ -520,10 +547,10 @@ class HomeScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.gps_fixed, color: cardColor, size: 18),
+                  Icon(isNewLearner ? Icons.flag : Icons.gps_fixed, color: cardColor, size: 18),
                   const SizedBox(width: 6),
                   Text(
-                    'AI NEXT BEST ACTION',
+                    isNewLearner ? 'YOUR NEXT STEP' : 'AI NEXT BEST ACTION',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -608,13 +635,24 @@ class HomeScreen extends StatelessWidget {
                         builder: (ctx) => FirstLessonScreen(stateManager: stateManager),
                       ),
                     );
+                  } else if (isTargetedFix) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (ctx) => LessonEngineScreen(
+                          concept: stateManager.currentLesson,
+                          stateManager: stateManager,
+                          isTargetedFixLaunch: true,
+                        ),
+                      ),
+                    );
                   } else {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (ctx) => LessonRunnerScreen(
+                        builder: (ctx) => LessonEngineScreen(
+                          concept: stateManager.currentLesson,
                           stateManager: stateManager,
-                          isTargetedFixLaunch: true,
                         ),
                       ),
                     );
@@ -629,7 +667,7 @@ class HomeScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Text(
-                      isNewLearner ? 'START LESSON' : 'START 3-MIN FIX',
+                      buttonLabel,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 6),
@@ -690,9 +728,11 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            student.dailyProgressMinutes >= student.dailyGoalMinutes
-                ? 'Daily goal reached! Great job protecting your streak.'
-                : '${student.dailyGoalMinutes - student.dailyProgressMinutes} minutes remaining to protect your streak!',
+            student.dailyProgressMinutes == 0
+                ? '0 of ${student.dailyGoalMinutes} min completed. Start your first lesson to build your daily streak!'
+                : (student.dailyProgressMinutes >= student.dailyGoalMinutes
+                    ? 'Daily goal reached! Great job protecting your streak.'
+                    : '${student.dailyGoalMinutes - student.dailyProgressMinutes} minutes remaining to reach today\'s goal!'),
             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
         ],
@@ -741,28 +781,46 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          if (isNewLearner) ...[
+          if (!student.hasLearningEvidence || student.concepts.isEmpty) ...[
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
-                'Complete your first lesson to activate and calibrate your AI Learning Twin.',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Not enough learning data yet.',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Complete your first lesson so LearnIQ can understand how you learn.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            _buildConceptBar('Variables', 0.10, AppColors.xpAmber, 'INITIALIZING'),
           ] else ...[
-            _buildConceptBar('Variables', student.concepts['variables']?.mastery ?? 0.92, AppColors.duolingoGreen, 'STABLE'),
-            const SizedBox(height: 8),
-            _buildConceptBar('Conditions', student.concepts['conditions']?.mastery ?? 0.81, AppColors.duolingoGreen, 'STABLE'),
-            const SizedBox(height: 8),
-            _buildConceptBar('Functions', student.concepts['functions']?.mastery ?? 0.58, AppColors.xpAmber, 'IMPROVING'),
-            const SizedBox(height: 8),
-            _buildConceptBar('Loops', student.concepts['loops']?.mastery ?? 0.43, AppColors.misconceptionRed, 'FRAGILE'),
+            ...student.concepts.entries.map((entry) {
+              final name = entry.key;
+              final data = entry.value;
+              Color color = AppColors.duolingoGreen;
+              String status = 'STABLE';
+              if (data.status == TopicStatus.weak) {
+                color = AppColors.misconceptionRed;
+                status = 'WEAK';
+              } else if (data.status == TopicStatus.practicing) {
+                color = AppColors.xpAmber;
+                status = 'PRACTICING';
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: _buildConceptBar(name[0].toUpperCase() + name.substring(1), data.mastery, color, status),
+              );
+            }),
           ],
         ],
       ),
@@ -870,6 +928,38 @@ class HomeScreen extends StatelessWidget {
                 icon: Icons.pest_control,
                 color: AppColors.xpAmber,
                 onTap: () => onTabChange(2),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionTile(
+                title: 'Ask LearnIQ',
+                subtitle: 'AI Study Companion',
+                icon: Icons.psychology_outlined,
+                color: AppColors.iqooCyan,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AskLearnIQScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildActionTile(
+                title: 'Weak Areas',
+                subtitle: 'AI Cognitive Radar',
+                icon: Icons.psychology,
+                color: AppColors.misconceptionRed,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (ctx) => WeakAreasScreen(stateManager: stateManager),
+                  ),
+                ),
               ),
             ),
           ],

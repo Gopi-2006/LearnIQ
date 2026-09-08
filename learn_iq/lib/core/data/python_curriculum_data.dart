@@ -1238,6 +1238,214 @@ class PythonCurriculumData {
         ),
       ],
     ),
+
+    // ==========================================
+    // UNIT 18: GUI EVENTS & MENUS (Cyber Control Room)
+    // Day 18 / Week 4: Application Development
+    // ==========================================
+    StoryConcept(
+      id: 'unit_18_gui_events',
+      title: 'GUI Events: Cyber Control Room',
+      unitId: 'unit_18',
+      unitTitle: 'Unit 18: GUI Events & Menus',
+      unitNumber: 18,
+      difficulty: 4,
+      storyTheme: 'Cyber Control Room',
+      themeEmoji: '🖥️',
+      themeColor: const Color(0xFF00E5FF),
+      weekNumber: 4,
+      weekTitle: 'Week 4: Application Development',
+      dayNumber: 18,
+      xpReward: 60,
+      keywords: ['tkinter', 'gui', 'events', 'button', 'menu', 'entry', 'bind', 'mainloop'],
+      scenes: [
+        StorySceneItem(
+          id: 'u18_s1_hook',
+          type: SceneType.storyHook,
+          title: '🎛️ THE MISSION CONTROL DASHBOARD',
+          worldEmoji: '🖥️',
+          worldBadge: 'CONTROL CENTER',
+          narrative: 'Terminal text is powerful, but mission pilots need graphical buttons, text entry boxes, and drop-down menus to operate the starship without typing terminal commands.',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.alert,
+            message: 'Time to level up into visual software engineering with Python\'s standard Tkinter GUI library!',
+          ),
+        ),
+        StorySceneItem(
+          id: 'u18_s2_concept',
+          type: SceneType.conceptReveal,
+          title: 'THE EVENT LOOP & WIDGETS',
+          worldEmoji: '💡',
+          narrative: 'A GUI window runs an infinite `mainloop()` listening for user clicks, keyboard strokes, and button triggers. Widgets like `Label`, `Button`, and `Entry` are placed using `.pack()` or `.grid()`.',
+          codeSnippet: 'import tkinter as tk\n\nroot = tk.Tk()\nroot.title("Ship Dashboard")\n\ndef launch():\n    status_lbl.config(text="Thrusters Engaged!")\n\nstatus_lbl = tk.Label(root, text="System Standby")\nstatus_lbl.pack()\nbtn = tk.Button(root, text="FIRE THRUSTERS", command=launch)\nbtn.pack()\n\n# root.mainloop() # Starts the visual event loop',
+        ),
+        StorySceneItem(
+          id: 'u18_s3_practice',
+          type: SceneType.microPractice,
+          title: 'PRACTICE: BUTTON COMMAND BINDING',
+          worldEmoji: '🎯',
+          narrative: 'When connecting a function to a button click, how do you pass the function name?',
+          options: ['command=launch', 'command=launch()', 'onclick="launch"', 'event=launch'],
+          correctOption: 'command=launch',
+          explanation: 'Pass the function reference without parentheses `()` so it executes on click, not when defined!',
+        ),
+        StorySceneItem(
+          id: 'u18_s4_mastery',
+          type: SceneType.masteryChallenge,
+          title: 'MASTERY: READING USER ENTRY',
+          worldEmoji: '🏆',
+          narrative: 'How do you extract user input from a `name_entry = tk.Entry(root)` field?',
+          options: ['name_entry.get()', 'name_entry.text', 'name_entry.value()', 'name_entry.read()'],
+          correctOption: 'name_entry.get()',
+          explanation: '.get() returns the current text inside a Tkinter Entry widget!',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.celebrating,
+            message: 'Visual mastery unlocked! You can now build native desktop applications for Windows, Mac, and Linux! +60 XP!',
+          ),
+        ),
+      ],
+    ),
+
+    // ==========================================
+    // UNIT 19: SQLITE DATABASE (The Vault of Eternal Records)
+    // Day 19 / Week 4: Application Development
+    // ==========================================
+    StoryConcept(
+      id: 'unit_19_sqlite_db',
+      title: 'Database: The Vault of Eternal Records',
+      unitId: 'unit_19',
+      unitTitle: 'Unit 19: SQLite Database Operations',
+      unitNumber: 19,
+      difficulty: 5,
+      storyTheme: 'The Vault of Eternal Records',
+      themeEmoji: '🗄️',
+      themeColor: const Color(0xFFFFD600),
+      weekNumber: 4,
+      weekTitle: 'Week 4: Application Development',
+      dayNumber: 19,
+      xpReward: 60,
+      keywords: ['sqlite', 'database', 'sql', 'insert', 'select', 'table', 'cursor', 'commit'],
+      scenes: [
+        StorySceneItem(
+          id: 'u19_s1_hook',
+          type: SceneType.storyHook,
+          title: '💾 PERSISTENCE ACROSS REBOOTS',
+          worldEmoji: '🗄️',
+          worldBadge: 'DATA VAULT',
+          narrative: 'Variables vanish when your program stops running. To store user accounts, high scores, and game saves forever, applications connect to a relational database.',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.thinking,
+            message: 'Python includes SQLite built-in right into the standard library! Zero setup or server installation required!',
+          ),
+        ),
+        StorySceneItem(
+          id: 'u19_s2_concept',
+          type: SceneType.conceptReveal,
+          title: 'CONNECT, CURSOR, EXECUTE, COMMIT',
+          worldEmoji: '💡',
+          narrative: 'Working with SQLite follows a 4-step rhythm:\n1. `sqlite3.connect("data.db")`\n2. `conn.cursor()` (the pointer that runs SQL commands)\n3. `cursor.execute("CREATE / INSERT / SELECT")`\n4. `conn.commit()` (saves changes to disk!)',
+          codeSnippet: 'import sqlite3\n\nconn = sqlite3.connect("ship_log.db")\ncursor = conn.cursor()\n\n# Create table\ncursor.execute("CREATE TABLE IF NOT EXISTS crew (name TEXT, rank TEXT)")\n\n# Insert record\ncursor.execute("INSERT INTO crew VALUES (\'Alex\', \'Captain\')")\nconn.commit()\n\n# Query records\ncursor.execute("SELECT * FROM crew")\nrows = cursor.fetchall()\nprint(rows) # [(\'Alex\', \'Captain\')]\nconn.close()',
+        ),
+        StorySceneItem(
+          id: 'u19_s3_practice',
+          type: SceneType.microPractice,
+          title: 'PRACTICE: SAVING CHANGES',
+          worldEmoji: '🎯',
+          narrative: 'You ran an INSERT command, but when you reopen the database file later, the data is missing! What line did you forget?',
+          options: ['conn.commit()', 'conn.save()', 'cursor.push()', 'sqlite.flush()'],
+          correctOption: 'conn.commit()',
+          explanation: 'conn.commit() writes pending database transactions permanently to the disk file!',
+        ),
+        StorySceneItem(
+          id: 'u19_s4_mastery',
+          type: SceneType.masteryChallenge,
+          title: 'MASTERY: SAFE PARAMETERIZED SQL',
+          worldEmoji: '🏆',
+          narrative: 'Which method safely inserts user input into a database without risking SQL injection attacks?',
+          options: [
+            'cursor.execute("INSERT INTO users VALUES (?, ?)", (user, pwd))',
+            'cursor.execute(f"INSERT INTO users VALUES (\'{user}\', \'{pwd}\')")',
+            'cursor.execute("INSERT INTO users VALUES " + user)',
+            'cursor.save(user, pwd)'
+          ],
+          correctOption: 'cursor.execute("INSERT INTO users VALUES (?, ?)", (user, pwd))',
+          explanation: 'Using ? placeholders and parameter tuples prevents malicious SQL injection exploits!',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.celebrating,
+            message: 'Data vault secured! Your software can now store millions of persistent records safely! +60 XP!',
+          ),
+        ),
+      ],
+    ),
+
+    // ==========================================
+    // UNIT 20: FULL CAPSTONE (Citadel Central Core)
+    // Day 20 / Week 4: Application Development
+    // ==========================================
+    StoryConcept(
+      id: 'unit_20_db_application',
+      title: 'Capstone: Database-Driven Software Engine',
+      unitId: 'unit_20',
+      unitTitle: 'Unit 20: Database-Driven Application',
+      unitNumber: 20,
+      difficulty: 5,
+      storyTheme: 'Citadel Central Core',
+      themeEmoji: '🏛️',
+      themeColor: const Color(0xFFFF6B00),
+      weekNumber: 4,
+      weekTitle: 'Week 4: Application Development',
+      dayNumber: 20,
+      xpReward: 120,
+      keywords: ['capstone', 'database', 'sqlite', 'crud', 'application', 'architecture', 'mastery'],
+      scenes: [
+        StorySceneItem(
+          id: 'u20_s1_hook',
+          type: SceneType.storyHook,
+          title: '🏛️ THE FULL ENTERPRISE ENGINE',
+          worldEmoji: '🏛️',
+          worldBadge: 'DAY 20 GRADUATION ARENA',
+          narrative: 'You have arrived at Day 20—the pinnacle of your Python journey! Full-stack Python engineers integrate OOP blueprints, file logging, exception boundaries, and SQLite databases into a unified software system.',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.excited,
+            message: 'This is the final challenge of the 20-Day Python Curriculum. Demonstrate full architectural synthesis!',
+          ),
+        ),
+        StorySceneItem(
+          id: 'u20_s2_concept',
+          type: SceneType.conceptReveal,
+          title: 'THE CRUD ARCHITECTURE (Create, Read, Update, Delete)',
+          worldEmoji: '💡',
+          narrative: 'Professional data applications encapsulate database operations into a dedicated Service/Repository class, keeping UI and business logic clean and decoupled.',
+          codeSnippet: 'class StudentVault:\n    def __init__(self, db_path="learniq.db"):\n        self.conn = sqlite3.connect(db_path)\n        self._init_tables()\n\n    def _init_tables(self):\n        with self.conn:\n            self.conn.execute("""\n                CREATE TABLE IF NOT EXISTS progress (\n                    topic_id TEXT PRIMARY KEY,\n                    mastery REAL,\n                    completed INTEGER\n                )\n            """)\n\n    def save_topic(self, topic_id, mastery):\n        with self.conn:\n            self.conn.execute("""\n                INSERT OR REPLACE INTO progress (topic_id, mastery, completed)\n                VALUES (?, ?, 1)\n            """, (topic_id, mastery))',
+        ),
+        StorySceneItem(
+          id: 'u20_s3_practice',
+          type: SceneType.microPractice,
+          title: 'PRACTICE: SAFE CONTEXT MANAGEMENT',
+          worldEmoji: '🎯',
+          narrative: 'Why is `with self.conn:` preferred when executing database operations in Python?',
+          options: [
+            'It automatically commits transactions on success and rolls back if an exception occurs',
+            'It makes the code execute 10x faster',
+            'It prevents importing sqlite3',
+            'It deletes the database file automatically'
+          ],
+          correctOption: 'It automatically commits transactions on success and rolls back if an exception occurs',
+          explanation: 'The connection context manager guarantees atomic transactions with automatic rollback on error!',
+        ),
+        StorySceneItem(
+          id: 'u20_s4_mastery',
+          type: SceneType.masteryChallenge,
+          title: 'GRAND GRADUATION: 20-DAY PYTHON MASTER',
+          worldEmoji: '🏆',
+          narrative: 'All 20 Days completed across Foundations, Data Structures, Software Engineering, and Application Development! You have built a complete, offline-first personal learning engine.',
+          chami: ChamiSpeech(
+            emotion: ChamiEmotion.celebrating,
+            message: '🎉 GRADUATION COMPLETE! You have conquered the entire 20-Day Python Curriculum! You are now equipped to build real-world software! +120 XP!',
+          ),
+        ),
+      ],
+    ),
   ];
 
   static StoryConcept? getById(String id) {

@@ -217,9 +217,27 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildLevelProgressCard(StudentState student) {
-    const int nextLevelXp = 1500;
-    const int currentBaseXp = 1000;
-    final double levelProgress = (student.xp - currentBaseXp) / (nextLevelXp - currentBaseXp);
+    int currentBaseXp = 0;
+    int nextLevelXp = 200;
+    String nextRank = 'Level 2 — Syntax Explorer at 200 XP';
+
+    if (student.level == 2) {
+      currentBaseXp = 200;
+      nextLevelXp = 500;
+      nextRank = 'Level 3 — Logic Apprentice at 500 XP';
+    } else if (student.level == 3) {
+      currentBaseXp = 500;
+      nextLevelXp = 1000;
+      nextRank = 'Level 4 — Bug Hunter at 1,000 XP';
+    } else if (student.level >= 4) {
+      currentBaseXp = 1000;
+      nextLevelXp = 2000;
+      nextRank = 'Level 5 — Algorithm Master at 2,000 XP';
+    }
+
+    final double levelProgress = nextLevelXp > currentBaseXp
+        ? (student.xp - currentBaseXp) / (nextLevelXp - currentBaseXp)
+        : 1.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -266,9 +284,9 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Next Rank: Level 4 — Bug Hunter at 1,500 XP',
-            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          Text(
+            'Next Rank: $nextRank',
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
         ],
       ),
@@ -276,6 +294,22 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildLearningTwinSection(StudentState student) {
+    final hasEvidence = student.hasLearningEvidence && student.concepts.isNotEmpty;
+
+    double avgMastery = 0.0;
+    double avgRetention = 0.0;
+    double avgConsistency = 0.0;
+    if (hasEvidence) {
+      for (final c in student.concepts.values) {
+        avgMastery += c.mastery;
+        avgRetention += c.retention;
+        avgConsistency += c.consistency;
+      }
+      avgMastery /= student.concepts.length;
+      avgRetention /= student.concepts.length;
+      avgConsistency /= student.concepts.length;
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -302,77 +336,113 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Your phone continuously updates this cognitive twin after every exercise, mistake, and teach-back.',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          Text(
+            hasEvidence
+                ? 'Your phone continuously updates this cognitive twin based on real exercise performance, mistakes, and drills.'
+                : 'Not enough learning data yet. Complete your first lesson so LearnIQ can understand how you learn.',
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
           ),
           const SizedBox(height: 16),
 
-          // High-level twin metrics
-          Row(
-            children: [
-              _buildTwinMetricBox('Understanding', '78%', AppColors.duolingoGreen),
-              const SizedBox(width: 8),
-              _buildTwinMetricBox('Retention', '71%', AppColors.xpAmber),
-              const SizedBox(width: 8),
-              _buildTwinMetricBox('Application', '63%', AppColors.iqooCyan),
-              const SizedBox(width: 8),
-              _buildTwinMetricBox('Consistency', '84%', AppColors.purpleAccent),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          const Text(
-            'CONCEPT STABILITY BREAKDOWN',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.1, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 10),
-
-          ...student.concepts.entries.map((entry) {
-            final name = entry.key;
-            final data = entry.value;
-            final pct = (data.mastery * 100).toInt();
-            Color color = AppColors.duolingoGreen;
-            String status = 'Stable';
-
-            if (data.mastery < 0.50) {
-              color = AppColors.misconceptionRed;
-              status = 'Fragile';
-            } else if (data.mastery < 0.80) {
-              color = AppColors.xpAmber;
-              status = 'Improving';
-            }
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 80,
-                    child: Text(
-                      name[0].toUpperCase() + name.substring(1),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
+          if (!hasEvidence)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: const [
+                  Icon(Icons.hourglass_empty_rounded, color: AppColors.textMuted, size: 28),
+                  SizedBox(height: 8),
+                  Text(
+                    'No Evidence Recorded',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: data.mastery,
-                        minHeight: 6,
-                        backgroundColor: AppColors.surface,
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                      ),
-                    ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Concepts and cognitive metrics activate after your first lesson attempt.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
                   ),
-                  const SizedBox(width: 10),
-                  Text('$pct%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-                  const SizedBox(width: 8),
-                  Text(status, style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
                 ],
               ),
-            );
-          }),
+            )
+          else ...[
+            // High-level evidence-based twin metrics
+            Row(
+              children: [
+                _buildTwinMetricBox('Mastery', '${(avgMastery * 100).toInt()}%', AppColors.duolingoGreen),
+                const SizedBox(width: 8),
+                _buildTwinMetricBox('Retention', '${(avgRetention * 100).toInt()}%', AppColors.xpAmber),
+                const SizedBox(width: 8),
+                _buildTwinMetricBox('Consistency', '${(avgConsistency * 100).toInt()}%', AppColors.iqooCyan),
+                const SizedBox(width: 8),
+                _buildTwinMetricBox('Evaluated', '${student.concepts.length}', AppColors.purpleAccent),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            const Text(
+              'CONCEPT STABILITY BREAKDOWN',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.1, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 10),
+
+            ...student.concepts.entries.map((entry) {
+              final name = entry.key;
+              final data = entry.value;
+              final pct = (data.mastery * 100).toInt();
+              Color color = AppColors.duolingoGreen;
+              String status = 'Stable';
+
+              if (data.status == TopicStatus.weak) {
+                color = AppColors.misconceptionRed;
+                status = 'Weak';
+              } else if (data.status == TopicStatus.mastered) {
+                color = AppColors.duolingoGreen;
+                status = 'Mastered';
+              } else if (data.mastery < 0.50) {
+                color = AppColors.misconceptionRed;
+                status = 'Fragile';
+              } else if (data.mastery < 0.80) {
+                color = AppColors.xpAmber;
+                status = 'Improving';
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        name[0].toUpperCase() + name.substring(1),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: data.mastery,
+                          minHeight: 6,
+                          backgroundColor: AppColors.surface,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('$pct%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+                    const SizedBox(width: 8),
+                    Text(status, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                  ],
+                ),
+              );
+            }),
+          ],
         ],
       ),
     );
@@ -406,6 +476,9 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildMisconceptionsCard(StudentState student) {
+    final hasActive = student.activeMisconceptions.isNotEmpty;
+    final hasResolved = student.resolvedMisconceptions.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -433,68 +506,80 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Active Misconceptions
-          if (student.activeMisconceptions.isNotEmpty) ...[
-            const Text(
-              'ACTIVE (NEEDS ATTENTION):',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 6),
-            ...student.activeMisconceptions.map((m) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.misconceptionRed.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.misconceptionRed.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.close, color: AppColors.misconceptionRed, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        m,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 10),
-          ],
-
-          // Resolved Misconceptions
-          const Text(
-            'RESOLVED BY TARGETED REPAIRS:',
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 6),
-          ...student.resolvedMisconceptions.map((m) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.duolingoGreen.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.duolingoGreen.withValues(alpha: 0.3)),
+          if (!hasActive && !hasResolved)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No misconceptions detected yet.\nLearnIQ monitors question attempts and code patterns to detect recurring cognitive bugs.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check, color: AppColors.duolingoGreen, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      m,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.duolingoGreen),
-                    ),
+            )
+          else ...[
+            // Active Misconceptions
+            if (hasActive) ...[
+              const Text(
+                'ACTIVE (NEEDS ATTENTION):',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 6),
+              ...student.activeMisconceptions.map((m) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.misconceptionRed.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.misconceptionRed.withValues(alpha: 0.3)),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.close, color: AppColors.misconceptionRed, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          m,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 10),
+            ],
+
+            // Resolved Misconceptions
+            if (hasResolved) ...[
+              const Text(
+                'RESOLVED BY TARGETED REPAIRS:',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.textSecondary),
               ),
-            );
-          }),
+              const SizedBox(height: 6),
+              ...student.resolvedMisconceptions.map((m) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.duolingoGreen.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.duolingoGreen.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check, color: AppColors.duolingoGreen, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          m,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.duolingoGreen),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ],
         ],
       ),
     );

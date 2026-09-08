@@ -6,6 +6,10 @@ import '../../../core/utils/app_logger.dart';
 import 'scenes/story_scene_widget.dart';
 import 'scenes/interactive_game_widget.dart';
 import 'scenes/interactive_code_widget.dart';
+import 'scenes/prove_you_understand_dialog.dart';
+import '../../../core/widgets/verified_explanation_card.dart';
+import 'ask_learn_iq_sheet.dart';
+import '../../../screens/ask_learniq_screen.dart';
 
 class LessonEngineScreen extends StatefulWidget {
   final StoryConcept concept;
@@ -91,6 +95,18 @@ class _LessonEngineScreenState extends State<LessonEngineScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline_rounded, color: AppColors.iqooCyan),
+            tooltip: 'Ask LearnIQ Study Companion',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AskLearnIQScreen(course: widget.concept.title),
+                ),
+              );
+            },
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -282,6 +298,11 @@ class _LessonEngineScreenState extends State<LessonEngineScreen> {
                 ],
               ),
             ),
+            VerifiedSourceBadge(
+              sourceTitle: widget.concept.verifiedSourceTitle,
+              sourceUrl: widget.concept.verifiedSourceUrl,
+              pythonVersion: 'Python 3.13',
+            ),
             const SizedBox(height: 12),
           ],
 
@@ -425,6 +446,12 @@ class _LessonEngineScreenState extends State<LessonEngineScreen> {
               scene.misconceptionExplanation ?? 'Keep in mind: In Python, displaying text on the screen is not the same as returning a value!',
               style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, height: 1.4),
             ),
+            const SizedBox(height: 8),
+            VerifiedSourceBadge(
+              sourceTitle: widget.concept.verifiedSourceTitle,
+              sourceUrl: widget.concept.verifiedSourceUrl,
+              pythonVersion: 'Python 3.13',
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -511,7 +538,38 @@ class _LessonEngineScreenState extends State<LessonEngineScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 28),
+
+                // Prove You Understand (Feynman Technique)
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      ProveYouUnderstandDialog.show(
+                        context,
+                        topicId: widget.concept.id,
+                        conceptTitle: widget.concept.title,
+                        stateManager: widget.stateManager,
+                      );
+                    },
+                    icon: const Icon(Icons.psychology, color: AppColors.iqooCyan),
+                    label: const Text(
+                      'PROVE YOU UNDERSTAND (+25 XP)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.1,
+                        color: AppColors.iqooCyan,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.iqooCyan, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
 
                 SizedBox(
                   width: double.infinity,

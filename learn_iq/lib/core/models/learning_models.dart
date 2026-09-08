@@ -40,6 +40,14 @@ class SyncEvent {
   );
 }
 
+enum TopicStatus {
+  notStarted,
+  learning,
+  practicing,
+  mastered,
+  weak,
+}
+
 class ConceptMastery {
   final double mastery;
   final double retention;
@@ -54,6 +62,20 @@ class ConceptMastery {
     this.mistakeCount = 0,
     this.successCount = 0,
   });
+
+  int get totalAttempts => mistakeCount + successCount;
+  bool get hasEnoughEvidence => totalAttempts >= 2;
+  double get consistency => (retention + confidence) / 2.0;
+
+  TopicStatus get status {
+    if (totalAttempts == 0) return TopicStatus.notStarted;
+    if (mastery >= 0.85 && successCount >= 2) return TopicStatus.mastered;
+    if (hasEnoughEvidence && (mastery < 0.50 || (mistakeCount > successCount && mistakeCount >= 2))) {
+      return TopicStatus.weak;
+    }
+    if (totalAttempts >= 4) return TopicStatus.practicing;
+    return TopicStatus.learning;
+  }
 
   ConceptMastery copyWith({
     double? mastery,
@@ -174,6 +196,11 @@ class StudentState {
     );
   }
 
+  bool get isNewLearner => completedLessonIds.isEmpty && xp == 0;
+  bool get hasLearningEvidence => concepts.values.any((c) => c.totalAttempts > 0) || completedLessonIds.isNotEmpty;
+  List<MapEntry<String, ConceptMastery>> get weakTopics => concepts.entries.where((e) => e.value.status == TopicStatus.weak).toList();
+  List<MapEntry<String, ConceptMastery>> get masteredTopics => concepts.entries.where((e) => e.value.status == TopicStatus.mastered).toList();
+
   factory StudentState.newLearner({
     String name = "Alex",
     String language = "python",
@@ -192,13 +219,11 @@ class StudentState {
       maxEnergy: 100,
       hearts: 5,
       maxHearts: 5,
-      gems: 50,
+      gems: 0,
       dailyGoalMinutes: dailyGoal,
       dailyProgressMinutes: 0,
       experienceLevel: experience,
-      concepts: {
-        "variables": ConceptMastery(mastery: 0.10, retention: 0.10, confidence: 0.20),
-      },
+      concepts: {},
       activeMisconceptions: [],
       resolvedMisconceptions: [],
       completedLessonIds: [],

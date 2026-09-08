@@ -33,6 +33,8 @@ enum GameType {
   duplicateHunter,  // Sets (remove duplicates)
   statSheetLookup,  // Dictionaries (key-value lookup)
   terminalProject,  // Final capstone (interactive terminal challenge)
+  parsonsLab,       // Parsons drag-and-drop structural code assembly & indentation
+  bugHunter,        // Interactive line-by-line syntax bug inspection & patcher
 }
 
 class ChamiSpeech {
@@ -133,4 +135,149 @@ class StoryConcept {
     this.xpReward = 50,
     this.keywords = const [],
   });
+
+  String get verifiedSourceTitle {
+    final lower = id.toLowerCase();
+    if (lower.contains('meet_python') || lower.contains('print')) {
+      return 'Python Tutorial (3.13) - An Informal Introduction to Python';
+    } else if (lower.contains('variable') || lower.contains('data_type') || lower.contains('math')) {
+      return 'Python Tutorial (3.13) - Using Python as a Calculator';
+    } else if (lower.contains('decision') || lower.contains('condition') || lower.contains('if')) {
+      return 'Python Tutorial (3.13) - More Control Flow Tools: if Statements';
+    } else if (lower.contains('loop') || lower.contains('for') || lower.contains('while')) {
+      return 'Python Tutorial (3.13) - More Control Flow Tools: for Statements';
+    } else if (lower.contains('function')) {
+      return 'Python Tutorial (3.13) - More Control Flow Tools: Defining Functions';
+    } else if (lower.contains('list')) {
+      return 'Python Tutorial (3.13) - Data Structures: More on Lists';
+    } else if (lower.contains('dict') || lower.contains('set')) {
+      return 'Python Tutorial (3.13) - Data Structures: Dictionaries and Sets';
+    } else if (lower.contains('string')) {
+      return 'Python Standard Library (3.13) - Built-in Types: Text Sequence Type str';
+    } else if (lower.contains('exception') || lower.contains('error')) {
+      return 'Python Tutorial (3.13) - Errors and Exceptions';
+    } else if (lower.contains('class') || lower.contains('oop')) {
+      return 'Python Tutorial (3.13) - Classes and Object-Oriented Programming';
+    }
+    return 'Python 3.13 Official Documentation';
+  }
+
+  String get verifiedSourceUrl {
+    final lower = id.toLowerCase();
+    if (lower.contains('meet_python') || lower.contains('print')) {
+      return 'https://docs.python.org/3/tutorial/introduction.html';
+    } else if (lower.contains('variable') || lower.contains('data_type') || lower.contains('math')) {
+      return 'https://docs.python.org/3/tutorial/introduction.html#using-python-as-a-calculator';
+    } else if (lower.contains('decision') || lower.contains('condition') || lower.contains('if')) {
+      return 'https://docs.python.org/3/tutorial/controlflow.html#if-statements';
+    } else if (lower.contains('loop') || lower.contains('for') || lower.contains('while')) {
+      return 'https://docs.python.org/3/tutorial/controlflow.html#for-statements';
+    } else if (lower.contains('function')) {
+      return 'https://docs.python.org/3/tutorial/controlflow.html#defining-functions';
+    } else if (lower.contains('list')) {
+      return 'https://docs.python.org/3/tutorial/datastructures.html#more-on-lists';
+    } else if (lower.contains('dict') || lower.contains('set')) {
+      return 'https://docs.python.org/3/tutorial/datastructures.html#dictionaries';
+    } else if (lower.contains('string')) {
+      return 'https://docs.python.org/3/library/stdtypes.html#text-sequence-type-str';
+    } else if (lower.contains('exception') || lower.contains('error')) {
+      return 'https://docs.python.org/3/tutorial/errors.html';
+    } else if (lower.contains('class') || lower.contains('oop')) {
+      return 'https://docs.python.org/3/tutorial/classes.html';
+    }
+    return 'https://docs.python.org/3/';
+  }
 }
+
+class ParsonsBlock {
+  final String id;
+  final String text;
+  final int correctIndentLevel; // 0, 1 (4 spaces), 2 (8 spaces)
+  final String? comment;
+
+  const ParsonsBlock({
+    required this.id,
+    required this.text,
+    this.correctIndentLevel = 0,
+    this.comment,
+  });
+}
+
+class ParsonsProblemData {
+  final String id;
+  final String title;
+  final String objective;
+  final String concept;
+  final List<ParsonsBlock> blocks;
+  final List<String> correctSequenceIds;
+  final String solutionExplanation;
+  final String softPauseHint;
+
+  const ParsonsProblemData({
+    required this.id,
+    required this.title,
+    required this.objective,
+    required this.concept,
+    required this.blocks,
+    required this.correctSequenceIds,
+    required this.solutionExplanation,
+    required this.softPauseHint,
+  });
+}
+
+class BugHunterLine {
+  final int lineNumber;
+  final String text;
+  final bool isBuggy;
+  final String? cleanInspectionHint;
+
+  const BugHunterLine({
+    required this.lineNumber,
+    required this.text,
+    this.isBuggy = false,
+    this.cleanInspectionHint,
+  });
+}
+
+class BugHunterFixOption {
+  final String id;
+  final String fixedCode;
+  final String label;
+  final bool isCorrect;
+  final String feedback;
+
+  const BugHunterFixOption({
+    required this.id,
+    required this.fixedCode,
+    required this.label,
+    required this.isCorrect,
+    required this.feedback,
+  });
+}
+
+class BugHunterProblemData {
+  final String id;
+  final String title;
+  final String scenario;
+  final String concept;
+  final List<BugHunterLine> lines;
+  final int buggyLineNumber;
+  final String bugExplanation;
+  final List<BugHunterFixOption> fixOptions;
+  final String expectedOutput;
+  final String brokenErrorOutput;
+
+  const BugHunterProblemData({
+    required this.id,
+    required this.title,
+    required this.scenario,
+    required this.concept,
+    required this.lines,
+    required this.buggyLineNumber,
+    required this.bugExplanation,
+    required this.fixOptions,
+    required this.expectedOutput,
+    required this.brokenErrorOutput,
+  });
+}
+

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/story_curriculum_models.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'parsons_lab_widget.dart';
+import 'bug_hunter_widget.dart';
 
 class InteractiveGameWidget extends StatefulWidget {
   final StorySceneItem scene;
@@ -39,6 +41,10 @@ class _InteractiveGameWidgetState extends State<InteractiveGameWidget> {
     final gameType = widget.scene.gameType ?? GameType.memoryContainers;
 
     switch (gameType) {
+      case GameType.parsonsLab:
+        return _buildParsonsLabScene();
+      case GameType.bugHunter:
+        return _buildBugHunterScene();
       case GameType.memoryContainers:
         return _buildMemoryContainersGame();
       case GameType.vendingMachine:
@@ -521,6 +527,100 @@ class _InteractiveGameWidgetState extends State<InteractiveGameWidget> {
     );
   }
 
+  Widget _buildParsonsLabScene() {
+    // Check if scene has custom ParsonsProblemData or construct default from codeBlocks
+    final problem = ParsonsProblemData(
+      id: widget.scene.id,
+      title: widget.scene.title.isNotEmpty ? widget.scene.title : 'Structural Scope & Order Challenge',
+      objective: widget.scene.narrative.isNotEmpty
+          ? widget.scene.narrative
+          : 'Reorder the blocks and adjust indentation levels to execute the sequence correctly.',
+      concept: widget.scene.misconceptionKey ?? 'python.functions',
+      blocks: widget.scene.codeBlocks != null && widget.scene.codeBlocks!.isNotEmpty
+          ? widget.scene.codeBlocks!
+              .asMap()
+              .entries
+              .map((e) => ParsonsBlock(
+                    id: 'block_${e.key}',
+                    text: e.value.trim(),
+                    correctIndentLevel: e.value.startsWith('    ') ? 1 : 0,
+                  ))
+              .toList()
+          : const [
+              ParsonsBlock(id: 'b1', text: 'def calculate_speed(distance, time):', correctIndentLevel: 0),
+              ParsonsBlock(id: 'b2', text: 'if time <= 0:', correctIndentLevel: 1),
+              ParsonsBlock(id: 'b3', text: 'return 0', correctIndentLevel: 2),
+              ParsonsBlock(id: 'b4', text: 'return distance / time', correctIndentLevel: 1),
+              ParsonsBlock(id: 'b5', text: 'print(calculate_speed(100, 5))', correctIndentLevel: 0),
+            ],
+      correctSequenceIds: widget.scene.correctOrder != null && widget.scene.correctOrder!.isNotEmpty
+          ? widget.scene.correctOrder!
+              .asMap()
+              .entries
+              .map((e) => 'block_${e.key}')
+              .toList()
+          : const ['b1', 'b2', 'b3', 'b4', 'b5'],
+      solutionExplanation: widget.scene.explanation ??
+          'Python checks conditions in nested blocks: functions and if-statements require 4-space indentation.',
+      softPauseHint: widget.scene.hint ??
+          'Place "def calculate_speed(...):" first, followed by indented lines.',
+    );
+
+    return ParsonsLabWidget(
+      problem: problem,
+      onCompleted: widget.onGameCompleted,
+    );
+  }
+
+  Widget _buildBugHunterScene() {
+    final problem = BugHunterProblemData(
+      id: widget.scene.id,
+      title: widget.scene.title.isNotEmpty ? widget.scene.title : 'Zero-Based Index Bug Hunter',
+      scenario: widget.scene.narrative.isNotEmpty
+          ? widget.scene.narrative
+          : 'The ship navigation array crashed on planet approach with an IndexError! Inspect lines to find and patch the invalid index.',
+      concept: widget.scene.misconceptionKey ?? 'python.lists.indexing',
+      lines: const [
+        BugHunterLine(lineNumber: 1, text: 'telemetry_points = [102, 204, 308]', isBuggy: false, cleanInspectionHint: 'Line 1 properly instantiates a list with 3 elements.'),
+        BugHunterLine(lineNumber: 2, text: 'print("Acquired coords:")', isBuggy: false, cleanInspectionHint: 'Line 2 is a standard string print statement.'),
+        BugHunterLine(lineNumber: 3, text: 'final_point = telemetry_points[3]', isBuggy: true),
+        BugHunterLine(lineNumber: 4, text: 'print(final_point)', isBuggy: false, cleanInspectionHint: 'Line 4 correctly outputs the variable.'),
+      ],
+      buggyLineNumber: 3,
+      bugExplanation: 'telemetry_points has length 3, so valid indices are 0, 1, and 2. telemetry_points[3] triggers IndexError!',
+      fixOptions: const [
+        BugHunterFixOption(
+          id: 'fix_1',
+          label: 'Change to index 2 (last item)',
+          fixedCode: 'final_point = telemetry_points[2]',
+          isCorrect: true,
+          feedback: 'Correct! telemetry_points[2] targets the 3rd and final item (308).',
+        ),
+        BugHunterFixOption(
+          id: 'fix_2',
+          label: 'Change to index 3 + 1',
+          fixedCode: 'final_point = telemetry_points[4]',
+          isCorrect: false,
+          feedback: 'Index 4 is even farther out of range!',
+        ),
+        BugHunterFixOption(
+          id: 'fix_3',
+          label: 'Convert index to string "3"',
+          fixedCode: 'final_point = telemetry_points["3"]',
+          isCorrect: false,
+          feedback: 'List indices must be integers or slices, not str (TypeError).',
+        ),
+      ],
+      expectedOutput: 'Acquired coords:\n308\n>>> Process completed successfully (exit code 0)',
+      brokenErrorOutput: 'Traceback (most recent call last):\n  File "inspection.py", line 3\n    final_point = telemetry_points[3]\nIndexError: list index out of range',
+    );
+
+    return BugHunterWidget(
+      problem: problem,
+      onCompleted: widget.onGameCompleted,
+    );
+  }
+
   Widget _buildGenericGameCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -532,3 +632,4 @@ class _InteractiveGameWidgetState extends State<InteractiveGameWidget> {
     );
   }
 }
+

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/learning_state_manager.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/verified_explanation_card.dart';
 import '../../main.dart';
 
 class FirstLessonScreen extends StatefulWidget {
@@ -363,6 +364,11 @@ class _FirstLessonScreenState extends State<FirstLessonScreen> {
                   ),
                 ],
               ),
+            ),
+            const VerifiedSourceBadge(
+              sourceTitle: 'Python Tutorial (3.13) - First Steps & Variables',
+              sourceUrl: 'https://docs.python.org/3/tutorial/introduction.html#using-python-as-a-calculator',
+              pythonVersion: 'Python 3.13',
             ),
             const SizedBox(height: 12),
           ],
