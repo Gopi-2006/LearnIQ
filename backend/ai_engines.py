@@ -176,6 +176,18 @@ class RecommendationEngine:
 
     @staticmethod
     def get_next_best_action(state: StudentState) -> RecommendationResponse:
+        # For a new learner without evidence/concepts, recommend Lesson 1
+        if not state.concepts or state.xp == 0:
+            return RecommendationResponse(
+                recommended_action="learn",
+                concept="variables",
+                title="Python Foundations: Lesson 1",
+                reason="Welcome to LearnIQ! Start your first lesson to build your foundational knowledge and train your AI Learning Twin.",
+                estimated_time_minutes=5,
+                priority_score=1.0,
+                urgency_tag="🟢 NEXT STEP",
+            )
+
         # Check active misconceptions first
         if "confusing print with return in functions" in state.active_misconceptions:
             return RecommendationResponse(
@@ -188,30 +200,31 @@ class RecommendationEngine:
                 urgency_tag="🔴 CRITICAL",
             )
 
-        # Check for decaying retention (Review Radar)
-        lowest_retention_concept = min(
-            state.concepts.items(),
-            key=lambda item: item[1].retention,
-        )
-
-        concept_name, concept_data = lowest_retention_concept
-        if concept_data.retention < 0.50:
-            return RecommendationResponse(
-                recommended_action="practice",
-                concept=concept_name,
-                title=f"Review: {concept_name.capitalize()} Mastery",
-                reason=f"Estimated retention for {concept_name} has dropped to {int(concept_data.retention * 100)}%. A 3-minute quick review will stabilize it before you forget.",
-                estimated_time_minutes=3,
-                priority_score=0.88,
-                urgency_tag="🔴 CRITICAL",
+        # Check for decaying retention (Review Radar) if concepts exist
+        if state.concepts:
+            lowest_retention_concept = min(
+                state.concepts.items(),
+                key=lambda item: item[1].retention,
             )
+
+            concept_name, concept_data = lowest_retention_concept
+            if concept_data.retention < 0.50:
+                return RecommendationResponse(
+                    recommended_action="practice",
+                    concept=concept_name,
+                    title=f"Review: {concept_name.capitalize()} Mastery",
+                    reason=f"Estimated retention for {concept_name} has dropped to {int(concept_data.retention * 100)}%. A 3-minute quick review will stabilize it before you forget.",
+                    estimated_time_minutes=3,
+                    priority_score=0.88,
+                    urgency_tag="🔴 CRITICAL",
+                )
 
         # Default next progression
         return RecommendationResponse(
             recommended_action="learn",
-            concept="functions",
-            title="Function Parameters & Scope",
-            reason="You're ready to advance your Python mastery by unlocking default arguments and scope.",
+            concept="variables",
+            title="Variables & Expressions",
+            reason="Continue advancing through the foundational Python curriculum.",
             estimated_time_minutes=5,
             priority_score=0.75,
             urgency_tag="🟡 RECOMMENDED",

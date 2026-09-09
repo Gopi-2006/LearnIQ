@@ -1,0 +1,30 @@
+# Environment & Secrets
+.env
+backend/.env
+*.env
+learn_iq/lib/core/config/gemini_config.dart
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Flutter / Dart
+learn_iq/.dart_tool/
+learn_iq/.flutter-plugins
+learn_iq/.flutter-plugins-dependencies
+learn_iq/build/
+learn_iq/.packages
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

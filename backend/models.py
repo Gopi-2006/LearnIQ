@@ -12,32 +12,50 @@ class ConceptState(BaseModel):
 
 
 class StudentState(BaseModel):
-    user_id: str = "user_gopi_01"
-    name: str = "Gopi"
+    user_id: str = "new_user"
+    name: str = "Code Learner"
     language: str = "python"
-    level: int = 3
-    level_title: str = "Syntax Scout"
-    xp: int = 1090
-    streak: int = 7
+    level: int = 1
+    level_title: str = "Code Newbie"
+    xp: int = 0
+    streak: int = 0
     daily_goal_minutes: int = 10
-    daily_progress_minutes: int = 8
-    energy: int = 80
+    daily_progress_minutes: int = 0
+    energy: int = 100
     max_energy: int = 100
-    gems: int = 240
-    concepts: Dict[str, ConceptState] = {
-        "variables": ConceptState(mastery=0.92, retention=0.91, confidence=0.95, mistake_count=1, success_count=14),
-        "conditions": ConceptState(mastery=0.81, retention=0.74, confidence=0.82, mistake_count=3, success_count=11),
-        "loops": ConceptState(mastery=0.43, retention=0.42, confidence=0.48, mistake_count=7, success_count=5),
-        "functions": ConceptState(mastery=0.58, retention=0.61, confidence=0.60, mistake_count=5, success_count=8),
-        "lists": ConceptState(mastery=0.48, retention=0.52, confidence=0.50, mistake_count=6, success_count=4),
-    }
-    active_misconceptions: List[str] = [
-        "confusing print with return in functions",
-        "zero-based index out-of-range in lists",
-    ]
-    resolved_misconceptions: List[str] = [
-        "variable re-assignment confusion",
-    ]
+    gems: int = 0
+    concepts: Dict[str, ConceptState] = {}
+    active_misconceptions: List[str] = []
+    resolved_misconceptions: List[str] = []
+
+    @classmethod
+    def demo_student(cls) -> "StudentState":
+        """Explicit demo state for judge/demo presentations only."""
+        return cls(
+            user_id="user_gopi_01",
+            name="Gopi",
+            level=3,
+            level_title="Syntax Scout",
+            xp=1090,
+            streak=7,
+            daily_progress_minutes=8,
+            energy=80,
+            gems=240,
+            concepts={
+                "variables": ConceptState(mastery=0.92, retention=0.91, confidence=0.95, mistake_count=1, success_count=14),
+                "conditions": ConceptState(mastery=0.81, retention=0.74, confidence=0.82, mistake_count=3, success_count=11),
+                "loops": ConceptState(mastery=0.43, retention=0.42, confidence=0.48, mistake_count=7, success_count=5),
+                "functions": ConceptState(mastery=0.58, retention=0.61, confidence=0.60, mistake_count=5, success_count=8),
+                "lists": ConceptState(mastery=0.48, retention=0.52, confidence=0.50, mistake_count=6, success_count=4),
+            },
+            active_misconceptions=[
+                "confusing print with return in functions",
+                "zero-based index out-of-range in lists",
+            ],
+            resolved_misconceptions=[
+                "variable re-assignment confusion",
+            ],
+        )
 
 
 class EvaluationRequest(BaseModel):
